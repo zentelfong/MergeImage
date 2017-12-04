@@ -31,10 +31,13 @@ public:
 	void Merge(RectVector* rects,int maxWidth,int maxHeight);
 	void GetRects(RectVector* rectsSrc,RectVector* rectsMerge);
 private:
-	void freeNode(MNode* node);
+	MNode* allocNode();
 	void getTreeNodes(MNode* node,RectVector* rectsSrc,RectVector* rectsMerge);
 	bool lastTraveralTree(MNode* node);
 	bool insertPicture(MNode* node);
 	Rect m_currentRect;
 	MNode* m_root;
+	MNode* m_nodeCache;
+	int m_usedNode;
+	int m_allocedNode;
 };

@@ -3,14 +3,15 @@
 #include <algorithm>
 
 MergeRect::MergeRect()
-	:m_root(NULL)
+	:m_root(NULL),m_nodeCache(NULL)
 {
 }
 
 
 MergeRect::~MergeRect()
 {
-	freeNode(m_root);
+	delete m_nodeCache;
+	m_usedNode = 0;
 	m_root=NULL;
 }
 
@@ -32,11 +33,13 @@ static bool SortRectByHeight( const Rect &v1, const Rect &v2)
 
 void MergeRect::Merge(RectVector* rects,int maxWidth,int maxHeight)
 {
-	freeNode(m_root);
+	delete m_nodeCache;
+	m_usedNode = 0;
 	m_root=NULL;
-
+	m_nodeCache = new MNode[rects->size()*2+1];
+	m_allocedNode = rects->size()*2+1;
 	std::sort(rects->begin(),rects->end(),SortRectByHeight);
-	m_root = new MNode;
+	m_root = allocNode();
 	m_root->picsize=Size(maxWidth,maxHeight);
 
 	for (RectVector::iterator i=rects->begin();i!=rects->end();++i)
@@ -51,17 +54,6 @@ void MergeRect::GetRects(RectVector* rectsSrc,RectVector* rectsMerge)
 	getTreeNodes(m_root,rectsSrc,rectsMerge);
 }
 
-
-
-void MergeRect::freeNode(MNode* node)
-{
-	if (node)
-	{
-		freeNode(node->left);
-		freeNode(node->right);
-		delete node;
-	}
-}
 
 void MergeRect::getTreeNodes(MNode* node,RectVector* rectsSrc,RectVector* rectsMerge)
 {
@@ -121,11 +113,10 @@ bool MergeRect::insertPicture(MNode* node)
 			通常是向值小的一方延伸，这样保证值大的一方可以放进去更多的图片。
 			● 上面的例子是向右延伸。
 		*/
-		node->left = new MNode;
+		node->left = allocNode();
 		node->left->point = Point(node->point.x, node->point.y + m_currentRect.getHeight());
-			
 		
-		node->right = new MNode;
+		node->right = allocNode();
 		node->right->point = Point(node->point.x+ m_currentRect.getWidth(), node->point.y);
 
 		node->left->picsize = Size(node->picsize.width, node->picsize.height - m_currentRect.getHeight());
@@ -155,11 +146,13 @@ bool MergeRect::insertPicture(MNode* node)
 	return false;
 }
 
-
-
-
-
-
+MergeRect::MNode* MergeRect::allocNode(){
+	if(m_usedNode ==m_allocedNode)
+	{
+		return NULL;
+	}
+	return &m_nodeCache[m_usedNode++];
+}
 
 
 
